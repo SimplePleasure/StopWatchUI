@@ -7,6 +7,9 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class Processor extends Thread {
 
+    private static final int UPDATE_FREQUENCY_MS = 100;
+    private static final String FORMAT_TIME = "%d : %03d";
+
     private final JLabel timeField;
     private final Lock lock;
     private final Condition startTimerCondition;
@@ -17,8 +20,8 @@ public class Processor extends Thread {
     private Duration period;
 
     Processor(JLabel timeField) {
-        this.stopWatchStarted = false;
         this.timeField = timeField;
+        this.stopWatchStarted = false;
         this.lock = new ReentrantLock();
         this.startTimerCondition = lock.newCondition();
     }
@@ -36,13 +39,13 @@ public class Processor extends Thread {
                     }
                 }
                 period = Duration.between(timerStarted, LocalDateTime.now());
-                String result = String.format("%d : %03d", period.toSeconds(), period.toMillis() % 1000);
+                String result = String.format(FORMAT_TIME, period.toSeconds(), period.toMillis() % 1000);
                 SwingUtilities.invokeLater(() -> timeField.setText(result));
 
                 try {
-                    Thread.sleep(100);
+                    Thread.sleep(UPDATE_FREQUENCY_MS);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    e.printStackTrace(System.err);
                 }
 
             } finally {
