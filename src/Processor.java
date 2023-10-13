@@ -8,8 +8,8 @@ public class Processor extends Thread {
     private static final String FORMAT_TIME = "%d : %03d";
     private final JLabel timeField;
 
-    private volatile LocalDateTime timerStarted;
-    private volatile boolean stopWatchStarted;
+    private LocalDateTime timerStarted;
+    private boolean stopWatchStarted;
 
     private Duration period;
 

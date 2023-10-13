@@ -13,7 +13,6 @@ public class Timer {
     private JLabel timeField;
 
     public Timer() {
-//        timeField.setText("0 : 0");
         processor = new Processor(timeField);
         processor.setDaemon(true);
         processor.start();
