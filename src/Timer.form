@@ -13,7 +13,7 @@
           <font size="20"/>
           <horizontalAlignment value="0"/>
           <preferredSize width="200" height="40"/>
-          <text value=""/>
+          <text value="0 : 0"/>
         </properties>
       </component>
       <vspacer id="462d3">

@@ -1,73 +1,45 @@
 import javax.swing.*;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class Processor extends Thread {
 
     private static final int UPDATE_FREQUENCY_MS = 100;
     private static final String FORMAT_TIME = "%d : %03d";
-
     private final JLabel timeField;
-    private final Lock lock;
-    private final Condition startTimerCondition;
 
-    private volatile boolean stopWatchStarted;
     private volatile LocalDateTime timerStarted;
+    private volatile boolean stopWatchStarted;
 
     private Duration period;
 
     Processor(JLabel timeField) {
         this.timeField = timeField;
         this.stopWatchStarted = false;
-        this.lock = new ReentrantLock();
-        this.startTimerCondition = lock.newCondition();
     }
 
     @Override
     public void run() {
-        for (;;) {
-            lock.lock();
+        for (; ; ) {
             try {
-                while (!stopWatchStarted) {
-                    try {
-                        startTimerCondition.await();
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
+                if (!stopWatchStarted) {
+                    wait();
                 }
-                period = Duration.between(timerStarted, LocalDateTime.now());
-                String result = String.format(FORMAT_TIME, period.toSeconds(), period.toMillis() % 1000);
-                SwingUtilities.invokeLater(() -> timeField.setText(result));
-
-                try {
-                    Thread.sleep(UPDATE_FREQUENCY_MS);
-                } catch (InterruptedException e) {
-                    e.printStackTrace(System.err);
-                }
-
-            } finally {
-                lock.unlock();
+                updateTime();
+                Thread.sleep(UPDATE_FREQUENCY_MS);
+            } catch (InterruptedException e) {
+                e.printStackTrace(System.err);
             }
         }
     }
 
     void startOrResume() {
-        lock.lock();
-        try {
-            if (timerStarted == null) {
-                stopWatchStarted = true;
-                timerStarted = LocalDateTime.now();
-                startTimerCondition.signalAll();
-            } else {
-                stopWatchStarted = true;
-                timerStarted = LocalDateTime.now().minusNanos(period.toNanos());
-                startTimerCondition.signalAll();
-            }
-        } finally {
-            lock.unlock();
+        if (timerStarted == null) {
+            stopWatchStarted = true;
+            timerStarted = LocalDateTime.now();
+        } else {
+            stopWatchStarted = true;
+            timerStarted = LocalDateTime.now().minusNanos(period.toNanos());
         }
     }
 
@@ -79,5 +51,11 @@ public class Processor extends Thread {
         stopWatchStarted = false;
         timerStarted = null;
         SwingUtilities.invokeLater(() -> timeField.setText("0 : 0"));
+    }
+
+    private void updateTime() {
+        period = Duration.between(timerStarted, LocalDateTime.now());
+        String result = String.format(FORMAT_TIME, period.toSeconds(), period.toMillis() % 1000);
+        SwingUtilities.invokeLater(() -> timeField.setText(result));
     }
 }
